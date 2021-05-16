@@ -1,55 +1,77 @@
-#Things to remember 
-#Before processing any text, you need to remove all the punctuation marks. To do this, you can go through each line of text, character-by-character, using the isalpha() method. This will check whether or not the character is a letter.
-#To split a line of text into words, you can use the split() method.
-#Before storing words in the frequency dictionary, check if they’re part of the "uninteresting" set of words (for example: "a", "the", "to", "if"). Make this set a parameter to your function so that you can change it if necessary.
+# Here are all the installs and imports you will need for your word cloud script and uploader widget
 
-# Python program to generate WordCloud
+#!pip install wordcloud
+#!pip install fileupload
+#!pip install ipywidgets
+#!jupyter nbextension install --py --user fileupload
+#!jupyter nbextension enable --py fileupload
+
+import wordcloud
+import numpy as np
+from matplotlib import pyplot as plt
+from IPython.display import display
+import fileupload
+import io
+import sys
+
+# This is the uploader widget
+
+def _upload():
+
+    _upload_widget = fileupload.FileUploadWidget()
+
+    def _cb(change):
+        global file_contents
+        decoded = io.StringIO(change['owner'].data.decode('utf-8'))
+        filename = change['owner'].filename
+        print('Uploaded `{}` ({:.2f} kB)'.format(
+            filename, len(decoded.read()) / 2 **10))
+        file_contents = decoded.getvalue()
+
+    _upload_widget.observe(_cb, names='data')
+    display(_upload_widget)
+
+_upload()
+
+
+
+def calculate_frequencies(file_contents):
+    # Here is a list of punctuations and uninteresting words you can use to process your text
+    punctuations = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
+    uninteresting_words = ["the", "a", "to", "if", "is", "it", "of", "and", "or", "an", "as", "i", "me", "my", \
+    "we", "our", "ours", "you", "your", "yours", "he", "she", "him", "his", "her", "hers", "its", "they", "them", \
+    "their", "what", "which", "who", "whom", "this", "that", "am", "are", "was", "were", "be", "been", "being", \
+    "have", "has", "had", "do", "does", "did", "but", "at", "by", "with", "from", "here", "when", "where", "how", \
+    "all", "any", "both", "each", "few", "more", "some", "such", "no", "nor", "too", "very", "can", "will", "just"]
+    
+    # LEARNER CODE START HERE
+    howmany = {}
+    book = file_contents.split()
+    for value in book:
+        values = value.strip(punctuations)
+        lower = values.lower()
+        if lower.isalpha() == False or lower in uninteresting_words:
+            continue
+        elif lower not in howmany:
+            howmany[lower]= 0
+        howmany[lower]+=1
+    return howmany
   
-# importing all necessery modules
-#import pip
-
-#def install(package):
-#    if hasattr(pip, 'main'):
-#        pip.main(['install', package])
-#    else:
-#        pip._internal.main(['install', package])
-
-# Example
-#if __name__ == '__main__':
-#    install('matplotlib')
-#if __name__ == '__main__':
-#    install('pandas')
-#if __name__ == '__main__':
-#    install('wordcloud')
-
-from PIL.Image import NONE
-from wordcloud import WordCloud, STOPWORDS
-import matplotlib.pyplot as plt
-import pandas as pd
-
-book = pd.read_csv('65348-0.txt', delimiter = "\t")
-comment_words = ''
-stopwords = set(STOPWORDS)
-
-
-for value in book.CONTENT:
-    value = str(value)
-    book_splitted = book.split()
-
-
-for i in range(len(book_splitted)):
-    book_splitted[i] = book_splitted[i].lower()
-      
-    comment_words += " ".join(book_splitted)+" "
-  
-wordcloud = WordCloud(width = 800, height = 800,
+    wordcloud = WordCloud(width = 800, height = 800,
                 background_color ='white',
                 stopwords = stopwords,
                 min_font_size = 10).generate(comment_words)
-  
-# plot the WordCloud image                       
-plt.figure(figsize = (8, 8), facecolor = None)
-plt.imshow(wordcloud)
-plt.axis("off")
-plt.tight_layout(pad = 0)
+    
+    #wordcloud
+    cloud = wordcloud.WordCloud()
+    cloud.generate_from_frequencies(howmany)
+    return cloud.to_array()
+
+
+
+    # Display your wordcloud image
+
+myimage = calculate_frequencies(file_contents)
+plt.imshow(myimage, interpolation = 'nearest')
+plt.axis('off')
 plt.show()
